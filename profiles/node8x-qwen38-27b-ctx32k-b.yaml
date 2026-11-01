@@ -1,0 +1,24 @@
+# Seed-1 server: as node8x-qwen38-27b-ctx32k.yaml, on GPUs 4 (trainer) and 5-6 (SGLang TP=2). Ports 8200 / 30200.
+name: node8x-qwen38-27b-ctx32k-b
+host: 127.0.0.1
+port: 8200
+sdk_version: "0.33.1"
+api_keys_env: ZROFORM_API_KEYS
+slots_per_base: 1
+models:
+  Qwen/Qwen3.8-27B:
+    max_lora_rank: 64
+    max_model_len: 32768
+store_dir: ${ZROFORM_DATA}/store  # from scripts/env.sh / .env
+trainer_device: cuda:4
+sampler_gpus: [5, 6]
+# Per GPU at TP=2: ~28 GB of weights; linear-attention state ~75 MB per request (48 layers, fp32); full-attention
+# KV ~32 KB per token (16 layers). 384 requests x (75 MB + ~1.5k tokens) is ~47 GB of the ~55 GB left at 0.85.
+# Prefix cache off: with it on, each request holds 5 state slots (measured on Qwen3.5-4B).
+sampler_mem_fraction: 0.85
+sampler_max_running_requests: 384
+sampler_extra_args: ["--cuda-graph-max-bs-decode", "384", "--disable-radix-cache"]
+sampler_max_loaded_loras: 4
+sampler_port: 30200
+micro_batch_tokens: 2048  # 56 GB of weights on the trainer GPU; 2k was as fast as 4k on the 4B models
+future_ttl_sec: 600

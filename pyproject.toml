@@ -1,0 +1,41 @@
+[project]
+name = "zroform"
+version = "0.1.0"
+description = "Tinker-compatible LoRA training server (RL/SFT/DPO) on SGLang + PyTorch"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    # Wire contract: the server imports the pinned SDK's own types and protobuf module.
+    "tinker==0.33.1",
+    # Sampler. Pins torch==2.13.0 and transformers==5.12.1 transitively.
+    "sglang==0.5.21",
+    "peft==0.21.2",
+    "fastapi",
+    "uvicorn",
+    "httpx",
+    "pyyaml",
+    "zstandard",
+    "safetensors",
+    "flash-linear-attention==0.5.2",
+]
+
+[project.optional-dependencies]
+# Trainer kernels for linear-attention models (Qwen3.5/3.8). Built from source against the venv's torch
+# (no prebuilt wheel for torch 2.13 + CUDA 13): `TORCH_CUDA_ARCH_LIST=12.0 CAUSAL_CONV1D_FORCE_BUILD=TRUE
+# uv sync --extra kernels`. Optional: without it the trainer uses PyTorch's conv1d (zroform/kernels.py).
+kernels = ["causal-conv1d==1.7.0"]
+
+[dependency-groups]
+dev = ["pytest", "pytest-asyncio"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+markers = ["gpu: needs the GPU and the real model (phase-1 gate tests)"]
+
+[tool.uv]
+# causal-conv1d's setup.py imports torch to compile its CUDA extension against the installed version.
+no-build-isolation-package = ["causal-conv1d"]
+

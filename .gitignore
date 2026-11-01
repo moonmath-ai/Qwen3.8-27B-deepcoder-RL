@@ -218,3 +218,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# This repo: run outputs and the client venv (paths in .env, see .env.example)
+runs/
+.venv-client/
